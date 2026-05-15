@@ -110,6 +110,19 @@
             <version>1.5.6</version>
         </dependency>
 
+        <!-- Real MCP wire protocol. Server-side starter brings Spring Web MVC
+             so the embedded Tomcat is dormant unless selfhealing.mcp.mode=http
+             flips web-application-type to servlet. Client-side starter is the
+             non-reactive variant (JDK HttpClient + SSE) so we stay off WebFlux. -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-mcp-client</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

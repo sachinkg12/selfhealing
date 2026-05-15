@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Capability discovery surface used by the agent. Mirrors MCP's session-start listTools call
- * (Section II).
+ * Capability discovery surface used by the agent. Mirrors MCP's session-start {@code tools/list}
+ * call.
  */
 public interface McpRegistry {
 

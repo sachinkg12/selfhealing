@@ -6,9 +6,8 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Repository (Repository pattern) of all tool calls and responses for a single incident. Section
- * III-B: "every tool call, argument, and response into a per-incident ledger that is later attached
- * to the final verdict for audit."
+ * Repository (Repository pattern) of all tool calls and responses for a single incident. Every tool
+ * call, argument, and response is recorded here and later attached to the final verdict for audit.
  */
 public final class EvidenceLedger {
 

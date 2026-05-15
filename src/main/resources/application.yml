@@ -9,8 +9,24 @@ spring:
         options:
           model: claude-haiku-4-5
           temperature: 0.1
+    # Default: MCP server and client starters are present on the classpath but
+    # dormant. The http-mode document below flips both on.
+    mcp:
+      server:
+        enabled: false
+      client:
+        enabled: false
 
 selfhealing:
+  mcp:
+    # in-process = default — agent calls McpServer beans via direct Java method
+    #              invocation (zero HTTP, zero JSON-RPC).
+    # http       = real MCP wire protocol — each call is a JSON-RPC 2.0
+    #              tools/call over Streamable HTTP (Spring AI 1.0.1 MCP server
+    #              endpoint at http://localhost:8765/sse). Toggle by activating
+    #              the mcp-http Spring profile: --spring.profiles.active=mcp-http.
+    mode: in-process
+    http-port: 8765
   refusal:
     threshold: 0.80
   planner:
@@ -59,3 +75,40 @@ logging:
     root: WARN
     com.sachingupta.selfhealing: INFO
     org.springframework.ai: WARN
+
+---
+# HTTP MCP mode. Activate with --spring.profiles.active=mcp-http. on-profile is
+# evaluated before spring.main.* is read, so this override sticks — unlike
+# on-property, which fires too late for spring.main. Also flips selfhealing.mcp.mode
+# so the RemoteMcpRegistry / McpServerAdapter @ConditionalOnProperty beans light up.
+spring:
+  config:
+    activate:
+      on-profile: mcp-http
+  main:
+    web-application-type: servlet
+  mvc:
+    async:
+      # SSE streams (Spring AI MCP server's transport) must stay open for the
+      # whole session. The default 30 s async timeout closes the stream and
+      # tools/call POSTs fail with chunked-transfer EOF. -1 disables the cap.
+      request-timeout: -1
+  ai:
+    mcp:
+      server:
+        enabled: true
+        name: selfhealing-gateway
+        version: 0.1.0
+        type: SYNC
+        sse-endpoint: /sse
+        sse-message-endpoint: /mcp/message
+      # Client auto-config stays OFF — RemoteMcpRegistry builds its own
+      # io.modelcontextprotocol.client.McpSyncClient lazily so nothing tries to
+      # open an SSE stream before the embedded Tomcat finishes binding.
+      client:
+        enabled: false
+selfhealing:
+  mcp:
+    mode: http
+server:
+  port: ${selfhealing.mcp.http-port:8765}

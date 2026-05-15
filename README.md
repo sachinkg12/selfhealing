@@ -29,6 +29,22 @@ Scenario slugs: `happy-path`, `refusal`, `rbac-denial`, `acl-denial`, `oauth-gat
 | `acl-denial` | Per-tool ACL: principal authorized for `search` scope, not `auth` | RBAC denial: principal not authorized for scope `auth` |
 | `oauth-gate` | Audience-scoped approval token | Four attempts: no token, wrong audience, expired, valid → reject, reject, reject, accept |
 
+## MCP transport: in-process vs real wire protocol
+
+The agent talks to the four MCP servers through an `McpRegistry` facade. Two implementations:
+
+```bash
+# Default: in-process. Agent calls the McpServer beans directly (zero HTTP, zero JSON-RPC).
+mvn -q -DskipTests spring-boot:run -Dspring-boot.run.arguments="--scenario happy-path"
+
+# Real MCP wire: each tool call is a JSON-RPC 2.0 tools/call over Streamable HTTP via
+# Spring AI 1.0.1's MCP server + the io.modelcontextprotocol.sdk client. The embedded
+# Tomcat hosts the gateway at http://localhost:8765/sse.
+mvn -q -DskipTests spring-boot:run -Dspring-boot.run.arguments="--spring.profiles.active=mcp-http --scenario happy-path"
+```
+
+The verdict JSON is byte-identical in both modes — the agent, the advisor pipeline, every scenario, and every `*McpServer` bean are transport-agnostic (Open/Closed). Only `mcp/transport/RemoteMcpRegistry`, `RemoteMcpServer`, and `McpServerAdapter` are new (Adapter pattern wrapping the SDK), plus the per-call `McpRequestEnvelope` that smuggles the agent's identity + scope + OAuth approval token through the `tools/call` payload.
+
 ## Build, format, verify
 
 ```bash

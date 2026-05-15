@@ -5,9 +5,9 @@ import com.sachingupta.selfhealing.security.identity.Role;
 import org.springframework.stereotype.Component;
 
 /**
- * Guard (specification-style) that enforces the coarse RBAC rules of Section III-C: read tools are
- * open to both roles, write tools are limited to {@link Role#REMEDIATOR} and to identities that
- * hold the target scope.
+ * Guard (specification-style) that enforces the coarse RBAC rules: read tools are open to both
+ * roles, write tools are limited to {@link Role#REMEDIATOR} and to identities that hold the target
+ * scope.
  */
 @Component
 public class RbacGuard {
