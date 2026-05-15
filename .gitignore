@@ -1,0 +1,20 @@
+# Secrets — never commit
+.env
+.env.local
+*.local.env
+
+# Build output
+target/
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Local kind cluster state
+.kind/
+
+# Docker compose volumes
+.compose-data/

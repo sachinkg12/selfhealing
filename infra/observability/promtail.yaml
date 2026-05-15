@@ -1,0 +1,126 @@
+# Promtail DaemonSet ships container logs from `/var/log/pods` to Loki.
+# Targets only the `selfhealing` namespace so we don't index everything.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: promtail
+  namespace: selfhealing
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: promtail
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "pods"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: promtail
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: promtail
+subjects:
+  - kind: ServiceAccount
+    name: promtail
+    namespace: selfhealing
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: promtail-config
+  namespace: selfhealing
+data:
+  promtail.yaml: |
+    server:
+      http_listen_port: 9080
+      grpc_listen_port: 0
+    positions:
+      filename: /tmp/positions.yaml
+    clients:
+      - url: http://loki.selfhealing.svc:3100/loki/api/v1/push
+    scrape_configs:
+      - job_name: kubernetes-pods
+        kubernetes_sd_configs:
+          - role: pod
+        pipeline_stages:
+          - cri: {}
+        relabel_configs:
+          # Drop pods scheduled on other nodes (DaemonSet runs per node).
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            target_label: __host__
+          - source_labels: [__meta_kubernetes_namespace]
+            action: keep
+            regex: selfhealing
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: replace
+            target_label: service
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: pod
+          - source_labels: [__meta_kubernetes_pod_container_name]
+            action: replace
+            target_label: container
+          - source_labels:
+              - __meta_kubernetes_namespace
+              - __meta_kubernetes_pod_name
+              - __meta_kubernetes_pod_uid
+              - __meta_kubernetes_pod_container_name
+            separator: /
+            target_label: __path__
+            replacement: /var/log/pods/$1_$2_$3/$4/*.log
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: promtail
+  namespace: selfhealing
+  labels:
+    app: promtail
+spec:
+  selector:
+    matchLabels:
+      app: promtail
+  template:
+    metadata:
+      labels:
+        app: promtail
+    spec:
+      serviceAccountName: promtail
+      containers:
+        - name: promtail
+          image: grafana/promtail:3.1.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - -config.file=/etc/promtail/promtail.yaml
+          volumeMounts:
+            - name: config
+              mountPath: /etc/promtail
+            - name: varlog
+              mountPath: /var/log
+            - name: varlibdockercontainers
+              mountPath: /var/lib/docker/containers
+              readOnly: true
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+      volumes:
+        - name: config
+          configMap:
+            name: promtail-config
+        - name: varlog
+          hostPath:
+            path: /var/log
+        - name: varlibdockercontainers
+          hostPath:
+            path: /var/lib/docker/containers

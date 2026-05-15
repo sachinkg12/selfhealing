@@ -1,0 +1,27 @@
+# Patch that bumps search-api from v1 to v2 — same image base, env var
+# SPIKE_MODE flipped to true. Applying this with `kubectl patch deployment
+# search-api` creates a new ReplicaSet and bumps the deployment revision
+# annotation to 2. The metrics-emitter then introduces a 1.8s p99 spike and
+# emits SocketTimeoutException log lines that Promtail ships to Loki.
+spec:
+  template:
+    metadata:
+      labels:
+        revision-label: v2
+      annotations:
+        selfhealing/revision-label: rev-v2
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: search-api
+          image: selfhealing-target:v2
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SERVICE_NAME
+              value: search-api
+            - name: SPIKE_MODE
+              value: "true"
+            - name: SPIKE_LATENCY_SECONDS
+              value: "1.8"

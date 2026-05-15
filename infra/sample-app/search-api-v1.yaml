@@ -1,0 +1,74 @@
+# Initial Deployment of search-api at v1 (baseline, no spike). The
+# KubernetesDeployBackend reads the Deployment's
+# `deployment.kubernetes.io/revision` annotation as the revision identifier.
+# v1 = revision 1, v2 = revision 2 after the patch is applied.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: search-api
+  namespace: selfhealing
+  labels:
+    app: search-api
+    revision-label: v1
+  annotations:
+    selfhealing/revision-label: rev-v1
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: search-api
+  template:
+    metadata:
+      labels:
+        app: search-api
+        revision-label: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+        selfhealing/revision-label: rev-v1
+    spec:
+      containers:
+        - name: search-api
+          image: selfhealing-target:v1
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SERVICE_NAME
+              value: search-api
+            - name: SPIKE_MODE
+              value: "false"
+            - name: SPIKE_LATENCY_SECONDS
+              value: "1.8"
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: search-api
+  namespace: selfhealing
+  labels:
+    app: search-api
+spec:
+  selector:
+    app: search-api
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      nodePort: 30080
+  type: NodePort

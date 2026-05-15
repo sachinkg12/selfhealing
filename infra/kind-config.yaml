@@ -1,0 +1,24 @@
+# Single-node kind cluster used by the reference implementation.
+# Port mappings expose Prometheus (Phase 2) and the Spring Authorization
+# Server (Phase 4) to the host so the agent can reach them without
+# additional kubectl port-forward plumbing.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: selfhealing
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      # Prometheus (added in Phase 2)
+      - containerPort: 30090
+        hostPort: 9090
+        protocol: TCP
+      # Loki (added in Phase 2)
+      - containerPort: 30100
+        hostPort: 3100
+        protocol: TCP
+      # Sample app (search-api) — port 30080 in cluster exposed on 8081
+      # so the agent can hit /admin endpoints on the metrics-emitter once
+      # Phase 2 lands. Not strictly required for Phase 3.
+      - containerPort: 30080
+        hostPort: 8081
+        protocol: TCP

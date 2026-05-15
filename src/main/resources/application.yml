@@ -1,0 +1,61 @@
+spring:
+  main:
+    banner-mode: off
+    web-application-type: none
+  ai:
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY}
+      chat:
+        options:
+          model: claude-haiku-4-5
+          temperature: 0.1
+
+selfhealing:
+  refusal:
+    threshold: 0.80
+  planner:
+    # deterministic = scenario emits hardcoded tool sequence (no LLM cost)
+    # llm           = LlmPlanner asks Anthropic Claude for each next step
+    mode: deterministic
+  agent:
+    # Safety cap on the number of MCP invocations a single run may perform.
+    # Bounds LLM cost and prevents runaway planners.
+    max-steps: 12
+  k8s:
+    # When true, KubernetesDeployBackend (fabric8) replaces DeployFakeBackend.
+    # Requires a reachable kind/k3s/etc. cluster with the namespace below.
+    enabled: false
+    namespace: selfhealing
+    # Scope-to-deployment-name suffix. scope "search" + suffix "-api" → "search-api".
+    scope-deployment-suffix: -api
+  observability:
+    # When true, PrometheusMetricsBackend + LokiLogBackend hit real HTTP APIs.
+    # Default off so deterministic-mode tests don't need a cluster.
+    enabled: false
+  prometheus:
+    url: http://localhost:9090
+  loki:
+    url: http://localhost:3100
+  oauth:
+    # When true, JwtTokenIssuer + JwtTokenVerifier (RSA-signed JWTs via Spring
+    # Security's NimbusJwtEncoder/Decoder + an in-memory JWKSource) replace the
+    # local HMAC implementations. The wire format becomes a real OAuth 2.0 JWT
+    # (RFC 7519) with audience and scope claims validated against the JWK set.
+    enabled: false
+  human-gate:
+    # auto  = AutoApprovalGate approves every write in the name of "auto-approval"
+    #         (suitable for CI and local sanity runs; the run log records "no human reviewed")
+    # slack = SlackApprovalGate posts a Block Kit message to ${SLACK_APPROVAL_CHANNEL} and
+    #         blocks the agent thread on the Approve / Deny button click (Socket Mode, no
+    #         public callback URL required)
+    mode: auto
+    # Seconds to wait for a Slack reviewer before timing out and refusing the write.
+    timeout-seconds: 120
+
+logging:
+  pattern:
+    console: "%clr(%-5level) %clr([%-22.22logger{22}]){cyan} %msg%n"
+  level:
+    root: WARN
+    com.sachingupta.selfhealing: INFO
+    org.springframework.ai: WARN

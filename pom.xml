@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.4</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.sachingupta</groupId>
+    <artifactId>selfhealing</artifactId>
+    <version>0.1.0</version>
+    <name>Agentic Operations Gateway: Reference Implementation</name>
+    <description>
+        Self-healing microservices agent that reasons over telemetry,
+        deploy history, and logs via the Model Context Protocol, behind
+        an RBAC / ACL / OAuth / human-approval security envelope.
+    </description>
+
+    <properties>
+        <java.version>21</java.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <spotless.version>2.43.0</spotless.version>
+        <google.java.format.version>1.22.0</google.java.format.version>
+        <spring-ai.version>1.0.1</spring-ai.version>
+        <spring-dotenv.version>4.0.0</spring-dotenv.version>
+        <fabric8.version>6.13.4</fabric8.version>
+        <slack-bolt.version>1.42.0</slack-bolt.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <!-- Spring AI: Anthropic chat model. Used by the LlmPlanner. -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-anthropic</artifactId>
+        </dependency>
+
+        <!-- Loads .env into the Spring Environment at startup so secrets stay
+             out of the repo. -->
+        <dependency>
+            <groupId>me.paulschwarz</groupId>
+            <artifactId>spring-dotenv</artifactId>
+            <version>${spring-dotenv.version}</version>
+        </dependency>
+
+        <!-- Fabric8 Kubernetes client. Used by KubernetesDeployBackend to
+             list rollouts, read current revision, and execute rollbacks
+             against a real kind-based cluster (Phase 3 of the demo). -->
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-client</artifactId>
+            <version>${fabric8.version}</version>
+        </dependency>
+
+        <!-- JOSE/JWT building blocks: NimbusJwtEncoder, NimbusJwtDecoder,
+             JWKSource. Pulled in directly to avoid the full Spring Security
+             web stack, since the agent runs as a CLI process. -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-oauth2-jose</artifactId>
+        </dependency>
+
+        <!-- Slack Bolt + Socket Mode. The agent opens an outbound WebSocket
+             to Slack to post interactive Block Kit messages and receive
+             approve/deny clicks without exposing a public HTTP endpoint.
+             Uses org.java-websocket:Java-WebSocket as the Socket Mode
+             transport so we do not have to drag in the legacy javax.websocket
+             API (Slack Bolt 1.42 was built against Java EE 8, but our Spring
+             Boot 3 runtime is Jakarta EE 10). -->
+        <dependency>
+            <groupId>com.slack.api</groupId>
+            <artifactId>bolt</artifactId>
+            <version>${slack-bolt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.slack.api</groupId>
+            <artifactId>bolt-socket-mode</artifactId>
+            <version>${slack-bolt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.java-websocket</groupId>
+            <artifactId>Java-WebSocket</artifactId>
+            <version>1.5.6</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>${spotless.version}</version>
+                <configuration>
+                    <java>
+                        <googleJavaFormat>
+                            <version>${google.java.format.version}</version>
+                            <style>AOSP</style>
+                        </googleJavaFormat>
+                        <removeUnusedImports/>
+                        <importOrder/>
+                        <trimTrailingWhitespace/>
+                        <endWithNewline/>
+                    </java>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <repositories>
+        <repository>
+            <id>spring-milestones</id>
+            <name>Spring Milestones</name>
+            <url>https://repo.spring.io/milestone</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+</project>

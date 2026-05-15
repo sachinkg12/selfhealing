@@ -1,0 +1,92 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< com.sachingupta:selfhealing >---------------------
+[INFO] Building Agentic Operations Gateway: Reference Implementation 0.1.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.3.4:run (default-cli) > test-compile @ selfhealing >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ selfhealing ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 0 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ selfhealing ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ selfhealing ---
+[INFO] skip non existing resourceDirectory /Users/sachingupta/Documents/Learning/Cursor/sachinkg12/selfhealing/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ selfhealing ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] <<< spring-boot:3.3.4:run (default-cli) < test-compile @ selfhealing <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.3.4:run (default-cli) @ selfhealing ---
+[INFO] Attaching agents: []
+INFO  [SelfHealingApplication] Starting SelfHealingApplication using Java 21.0.10 with PID 12028 (/Users/sachingupta/Documents/Learning/Cursor/sachinkg12/selfhealing/target/classes started by sachingupta in /Users/sachingupta/Documents/Learning/Cursor/sachinkg12/selfhealing)
+INFO  [SelfHealingApplication] No active profile set, falling back to 1 default profile: "default"
+INFO  [ubernetesDeployBackend] KubernetesDeployBackend ready (namespace=selfhealing, master=https://127.0.0.1:57282/)
+INFO  [s.s.m.s.LokiLogBackend] LokiLogBackend ready (baseUrl=http://localhost:3100)
+INFO  [ometheusMetricsBackend] PrometheusMetricsBackend ready (baseUrl=http://localhost:9090)
+INFO  [SelfHealingApplication] Started SelfHealingApplication in 3.866 seconds (process running for 4.351)
+INFO  [c.s.s.s.ScenarioRunner] 
+INFO  [c.s.s.s.ScenarioRunner] ====================================================================
+INFO  [c.s.s.s.ScenarioRunner] Scenario: happy-path — Latency regression → confidence-scored rollback → notify → verify
+INFO  [c.s.s.s.ScenarioRunner] Paper claim: Section IV + Figure 2 (end-to-end remediation loop)
+INFO  [c.s.s.s.ScenarioRunner] ====================================================================
+INFO  [.s.s.HappyPathScenario] Planner mode: llm (LlmPlanner)
+INFO  [c.s.s.a.llm.LlmPlanner]   LLM planner step (latency=1646ms, tokens used: input=865, output=122)
+INFO  [c.s.s.agent.Agent     ] [DETECT] search-remediator → prometheus-mcp.range_query (scope=search)
+INFO  [c.s.s.a.llm.LlmPlanner]   LLM planner step (latency=1363ms, tokens used: input=875, output=92)
+INFO  [c.s.s.agent.Agent     ] [CORRELATE] search-remediator → deploy-mcp.history (scope=search)
+INFO  [c.s.s.a.llm.LlmPlanner]   LLM planner step (latency=1435ms, tokens used: input=895, output=124)
+INFO  [c.s.s.agent.Agent     ] [HYPOTHESIZE] search-remediator → log-mcp.search (scope=search)
+INFO  [c.s.s.a.llm.LlmPlanner]   LLM planner step (latency=1369ms, tokens used: input=911, output=122)
+INFO  [c.s.s.a.llm.LlmPlanner]   LLM proposed already-called tool 'search'; re-asking (attempt 1/3)
+INFO  [c.s.s.a.llm.LlmPlanner]   LLM planner step (latency=1737ms, tokens used: input=958, output=118)
+INFO  [c.s.s.agent.Agent     ]   verdict gate: proposing deploy.rollback (advisor pipeline running)
+INFO  [c.s.s.agent.Agent     ]   human gate: requesting approval for deploy.rollback
+INFO  [s.a.h.AutoApprovalGate] (auto-approval) approving deploy.rollback for incident INC-2026-0515-0001 (confidence=1.0, threshold=0.8)
+INFO  [c.s.s.agent.Agent     ]   human gate: APPROVED by auto-approval — wire token minted (60s)
+INFO  [c.s.s.agent.Agent     ] [REMEDIATE] search-remediator → deploy-mcp.rollback (scope=search)
+INFO  [c.s.s.a.llm.LlmPlanner]   LLM planner step (latency=1488ms, tokens used: input=938, output=131)
+INFO  [c.s.s.agent.Agent     ] [REMEDIATE] search-remediator → notification-mcp.post (scope=search)
+INFO  [otificationFakeBackend] Slack post → channel=#oncall, slack_enabled=true, status=200
+INFO  [c.s.s.a.llm.LlmPlanner]   LLM planner step (latency=1512ms, tokens used: input=958, output=117)
+INFO  [c.s.s.agent.Agent     ] [VERIFY] search-remediator → prometheus-mcp.instant_query (scope=search)
+INFO  [c.s.s.a.llm.LlmPlanner]   LLM planner step (latency=2979ms, tokens used: input=975, output=310)
+INFO  [.s.s.HappyPathScenario] 
+INFO  [.s.s.HappyPathScenario] Verdict:
+{
+  "incident_id" : "INC-2026-0515-0001",
+  "decision" : "remediate",
+  "hypothesis" : "post-deploy regression on search-api",
+  "evidence" : [ {
+    "tool" : "prometheus.range_query",
+    "signal" : "p99 elevated (last 1977ms)"
+  }, {
+    "tool" : "deploy.history",
+    "signal" : "canary cutover at T-30s (rev-2)"
+  }, {
+    "tool" : "log.search",
+    "signal" : "SocketTimeoutException cluster on upstream ranker"
+  } ],
+  "confidence" : 1.0,
+  "threshold" : 0.8,
+  "action" : {
+    "tool" : "deploy.rollback",
+    "arguments" : {
+      "service" : "search-api",
+      "target_revision" : "rev-1"
+    },
+    "approval_token" : "eyJraWQiOiI2YjIyOGZlNy1mY2U3LTQxMzMtOTYyMS1lYjcwZDUwZGRlMzQiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJzZWxmaGVhbGluZyIsInN1YiI6ImF1dG8tYXBwcm92YWxAc2VsZmhlYWxpbmciLCJhdWQiOiJkZXBsb3ktbWNwIiwic2NwIjoic2VhcmNoIiwiZXhwIjoxNzc4ODczNjI3LCJpYXQiOjE3Nzg4NzM1Njd9.ig0O5N3NxvEFhtGdeAGKwcXj0u2ZaaNcrh-xCbcTAPAzetOHY7XwtN1czNeG6VjJkGI6HKDnAhkwoIM-TR1d9N9WmOW10yNjRIy3b4PamNl34Jc95h7EDox2XZMWQsruhrPAu_iXztBE2VVSPlXne1XZbhnTn-3A5eQWFIw5hUvvN1bgVHRSLKGTdD5lqfTCR0lNd1SfCt0BlGjM6321Ek8OJNbofk-MtD2iUI9wghHlZ4l7ukzW57SiFB2QqOXY6dSWDbjdHXkjNbe-KsOhCmORt_vppCvSSxi7BIGcJCmPe9hhW6FvgHco2GNb4cqkMwClAGg5ZDvnx7Zt4La9RQ"
+  }
+}
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  22.532 s
+[INFO] Finished at: 2026-05-15T12:32:54-07:00
+[INFO] ------------------------------------------------------------------------
