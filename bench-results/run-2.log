@@ -79,7 +79,7 @@ INFO  [.s.s.HappyPathScenario] Verdict:
       "service" : "search-api",
       "target_revision" : "rev-1"
     },
-    "approval_token" : "eyJraWQiOiJjNjc3MTJjOS02MjJiLTQ3ZTAtOGIzYi1mYjRmNzk1MDA5ZDQiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJzZWxmaGVhbGluZyIsInN1YiI6ImF1dG8tYXBwcm92YWxAc2VsZmhlYWxpbmciLCJhdWQiOiJkZXBsb3ktbWNwIiwic2NwIjoic2VhcmNoIiwiZXhwIjoxNzc4ODgyMjgzLCJpYXQiOjE3Nzg4ODIyMjN9.muy2QNEBhLpapf2hJmAAa2a5n-hxFg6bTzIe7c2ScWrHXRqSKZI6zI2gLe_Zbjnd-zQhjnZrhl7Q4IUaUVL_D_H0dbqpLIKHSfn9PlSQVhywIckXiFrZ8vbO1c2yBhuFBuLwM-guqDTp0VnzeDmf6A9_1Uq1oFljS_EjaDnFvnW_9HVLbdaj6yWMZGhPQgSibbtHSWRG4rvBRRc3mVkaAzmTjsVSyybGELd7uXkdZOn_nSsJq7GzAgmwOQJGFoNAPaYbjReRT5U6BnpnyTlfpc9oVKrn_5t0DcqbvpWoYFWciEsNhPKCwzweDPKEm-6HAlzDW6vu1n-OdlJcVMmt4A"
+    "approval_token" : "<redacted>"
   }
 }
 [INFO] ------------------------------------------------------------------------

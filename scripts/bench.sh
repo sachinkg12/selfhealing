@@ -35,6 +35,13 @@ for i in $(seq 1 "$N"); do
     END=$(date +%s)
     ELAPSED=$((END - START))
 
+    # Redact JWTs from the captured verdict before the log is committed.
+    # The signing key is process-ephemeral so the tokens are inert, but
+    # committing them is bad hygiene and a foot-gun if the JWK source ever
+    # becomes persistent.
+    sed -i.bak -E 's|("approval_token" : ")[^"]+(")|\1<redacted>\2|g' "$OUT/run-$i.log"
+    rm -f "$OUT/run-$i.log.bak"
+
     STEPS=$(grep -c "LLM planner step" "$OUT/run-$i.log" || echo 0)
     DEDUPS=$(grep -c "already-called" "$OUT/run-$i.log" || echo 0)
     INPUT=$(grep "LLM planner step" "$OUT/run-$i.log" | grep -oE 'input=[0-9]+' | sed 's/input=//' | paste -sd+ - | bc || echo 0)
