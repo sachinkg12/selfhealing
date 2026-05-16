@@ -30,6 +30,8 @@ public final class RefusalBlockKit {
                 header(":rotating_light: Agentic Ops Gateway — REFUSED, on-call action required"));
         blocks.add(divider());
 
+        boolean belowThreshold = verdict.confidence() < verdict.threshold();
+        String thresholdMarker = belowThreshold ? " :x: below threshold" : "";
         blocks.add(
                 section(
                         "*Incident*\n`"
@@ -40,7 +42,8 @@ public final class RefusalBlockKit {
                                 + format(verdict.confidence())
                                 + "`  (threshold `"
                                 + format(verdict.threshold())
-                                + "`) :x: below threshold"));
+                                + "`)"
+                                + thresholdMarker));
 
         blocks.add(divider());
 

@@ -49,7 +49,10 @@ public final class VerdictBuilder {
     }
 
     public VerdictBuilder confidence(double confidence) {
-        this.confidence = confidence;
+        // Two-decimal precision is the contract: the verdict is a human-readable JSON document
+        // and raw IEEE-754 doubles (e.g. 0.6666666666666666) are noise. Keep the rounding here so
+        // every confidence-emitting code path benefits.
+        this.confidence = Math.round(confidence * 100.0) / 100.0;
         return this;
     }
 
@@ -83,6 +86,10 @@ public final class VerdictBuilder {
 
     public List<EvidenceRef> currentEvidence() {
         return List.copyOf(evidence);
+    }
+
+    public List<String> currentMissingSignals() {
+        return List.copyOf(missingSignals);
     }
 
     public Verdict build() {

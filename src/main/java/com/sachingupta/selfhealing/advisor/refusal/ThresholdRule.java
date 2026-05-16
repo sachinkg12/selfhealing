@@ -25,15 +25,16 @@ public class ThresholdRule implements RefusalRule {
         return "threshold-rule";
     }
 
+    /**
+     * Triggers a refusal when {@link ReasoningContext#computedConfidence()} drops below the
+     * configured threshold, but adds nothing to {@code missing_signals}: that field is reserved for
+     * missing inputs (which {@link CompletenessRule} populates). The threshold and confidence
+     * values themselves are already part of the verdict envelope and carry the rationale.
+     */
     @Override
     public Optional<List<String>> evaluate(ReasoningContext context) {
         if (context.computedConfidence() < threshold) {
-            return Optional.of(
-                    List.of(
-                            "confidence "
-                                    + context.computedConfidence()
-                                    + " below threshold "
-                                    + threshold));
+            return Optional.of(List.of());
         }
         return Optional.empty();
     }
