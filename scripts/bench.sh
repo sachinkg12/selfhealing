@@ -2,15 +2,24 @@
 # bench.sh — run N happy-path scenarios against the full real stack, capture
 # LLM round-trips, token counts, end-to-end latency, and kubectl evidence.
 #
-# Usage: scripts/bench.sh [N]   (default N=3)
+# Usage: scripts/bench.sh [N] [MODE]
+#   N     — number of runs (default 3)
+#   MODE  — "in-process" (default) or "mcp-http" (activates Spring AI MCP
+#           server + client over JSON-RPC on Streamable HTTP)
 
 set -euo pipefail
 
 N=${1:-3}
-OUT=bench-results
+MODE=${2:-in-process}
+OUT=bench-results-${MODE}
 mkdir -p "$OUT"
 
-echo "running $N happy-path runs in full-real mode (LLM + K8s + Prom + Loki + OAuth)"
+PROFILE_ARG=""
+if [[ "$MODE" == "mcp-http" ]]; then
+    PROFILE_ARG="--spring.profiles.active=mcp-http"
+fi
+
+echo "running $N happy-path runs in full-real mode (MCP=$MODE, LLM + K8s + Prom + Loki + OAuth)"
 echo "writing logs to $OUT/run-N.log"
 echo ""
 
@@ -26,7 +35,8 @@ for i in $(seq 1 "$N"); do
 
     START=$(date +%s)
     mvn -DskipTests spring-boot:run \
-        -Dspring-boot.run.arguments="--selfhealing.planner.mode=llm \
+        -Dspring-boot.run.arguments="$PROFILE_ARG \
+            --selfhealing.planner.mode=llm \
             --selfhealing.k8s.enabled=true \
             --selfhealing.observability.enabled=true \
             --selfhealing.oauth.enabled=true \
