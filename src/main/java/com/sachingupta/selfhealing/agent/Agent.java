@@ -2,6 +2,7 @@ package com.sachingupta.selfhealing.agent;
 
 import com.sachingupta.selfhealing.advisor.api.ReasoningContext;
 import com.sachingupta.selfhealing.advisor.pipeline.AdvisorPipeline;
+import com.sachingupta.selfhealing.agent.handoff.RefusalEvent;
 import com.sachingupta.selfhealing.agent.humangate.HumanApprovalGate;
 import com.sachingupta.selfhealing.agent.humangate.HumanApprovalOutcome;
 import com.sachingupta.selfhealing.agent.humangate.HumanApprovalRequest;
@@ -16,6 +17,7 @@ import com.sachingupta.selfhealing.verdict.Verdict;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 /**
@@ -46,16 +48,19 @@ public class Agent {
     private final McpRegistry registry;
     private final AdvisorPipeline pipeline;
     private final HumanApprovalGate humanGate;
+    private final ApplicationEventPublisher eventPublisher;
     private final int maxSteps;
 
     public Agent(
             McpRegistry registry,
             AdvisorPipeline pipeline,
             HumanApprovalGate humanGate,
+            ApplicationEventPublisher eventPublisher,
             @Value("${selfhealing.agent.max-steps:12}") int maxSteps) {
         this.registry = registry;
         this.pipeline = pipeline;
         this.humanGate = humanGate;
+        this.eventPublisher = eventPublisher;
         this.maxSteps = maxSteps;
     }
 
@@ -70,7 +75,7 @@ public class Agent {
             }
             gated = ensureGated(step, context, gated);
             if (context.refused()) {
-                return context.verdict().build();
+                return finish(context);
             }
             invoke(step, context);
             stepsTaken++;
@@ -85,7 +90,7 @@ public class Agent {
             PlannedStep step = maybeNext.get();
             gated = ensureGated(step, context, gated);
             if (context.refused()) {
-                return context.verdict().build();
+                return finish(context);
             }
             invoke(step, context);
             idx++;
@@ -103,7 +108,21 @@ public class Agent {
         if (!gated) {
             pipeline.run(context);
         }
-        return context.verdict().build();
+        return finish(context);
+    }
+
+    /**
+     * Builds the verdict and, if the decision is REFUSE, fires a {@link RefusalEvent} so any
+     * registered hand-off listener (Slack, future PagerDuty/Opsgenie, …) can route the verdict to
+     * standard incident-response tooling. Listener exceptions are isolated by Spring; a Slack
+     * outage cannot crash the agent run.
+     */
+    private Verdict finish(ReasoningContext context) {
+        Verdict verdict = context.verdict().build();
+        if (verdict.decision() == Decision.REFUSE) {
+            eventPublisher.publishEvent(new RefusalEvent(verdict, context));
+        }
+        return verdict;
     }
 
     /**

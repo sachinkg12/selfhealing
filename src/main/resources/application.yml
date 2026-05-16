@@ -29,6 +29,15 @@ selfhealing:
     http-port: 8765
   refusal:
     threshold: 0.80
+    handoff:
+      slack:
+        # When true, posts a Block Kit hand-off message to SLACK_WEBHOOK_URL
+        # whenever the agent emits a refuse verdict (threshold-driven OR human-gate
+        # timeout/deny). No buttons — informational hand-off, not request for action.
+        enabled: false
+        # Slack mention prefix (pings the channel). Blank to disable.
+        # Use "<!here>" for active channel members, "<!channel>" for everyone.
+        mention: "<!here>"
   planner:
     # deterministic = scenario emits hardcoded tool sequence (no LLM cost)
     # llm           = LlmPlanner asks Anthropic Claude for each next step

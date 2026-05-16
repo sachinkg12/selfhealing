@@ -58,6 +58,7 @@ The agent has five independent toggles. Each defaults to "demo-friendly" (no ext
 | **Telemetry** | `PrometheusFakeBackend` + `LogFakeBackend` | `--selfhealing.observability.enabled=true` (real Prometheus 2.55 + Loki 3.1.1 over HTTP) |
 | **OAuth** | HMAC tokens | `--selfhealing.oauth.enabled=true` (RS256 JWT via Spring Security `oauth2-jose` + in-memory JWKSource) |
 | **Human gate** | `auto` (auto-approve every write) | `--selfhealing.human-gate.mode=slack` (Bolt Socket Mode, Block Kit Approve/Deny) |
+| **Refusal hand-off** | none (verdict to stdout) | `--selfhealing.refusal.handoff.slack.enabled=true` (Block Kit hand-off message to `SLACK_WEBHOOK_URL` channel, no buttons; pings `<!here>` by default) |
 
 ### Common combinations
 
@@ -176,6 +177,8 @@ All settings live in `src/main/resources/application.yml`; every value can be ov
 | Property | Default | Effect |
 |---|---|---|
 | `selfhealing.refusal.threshold` | `0.80` | Confidence below this flips the verdict to `REFUSE`. |
+| `selfhealing.refusal.handoff.slack.enabled` | `false` | Post a Block Kit hand-off to `SLACK_WEBHOOK_URL` on every refuse verdict. |
+| `selfhealing.refusal.handoff.slack.mention` | `<!here>` | Slack mention prefix on the hand-off message; blank to disable. |
 | `selfhealing.planner.mode` | `deterministic` | `llm` enables the Anthropic-backed `LlmPlanner`. |
 | `selfhealing.agent.max-steps` | `12` | Hard cap on MCP invocations per run (bounds runaway planners). |
 | `selfhealing.mcp.mode` | `in-process` | Flipped to `http` by the `mcp-http` profile. |

@@ -38,7 +38,24 @@ public class SlackWebhookClient {
             log.info("(Slack disabled — printing locally) [{}] {}", channelHint, body);
             return new PostResult(true, 0, "stub");
         }
-        String payload = "{\"text\": " + jsonString(body) + "}";
+        return sendJson("{\"text\": " + jsonString(body) + "}");
+    }
+
+    /**
+     * Posts a fully-formed JSON payload (e.g. a Slack Block Kit message with {@code text} and
+     * {@code blocks} fields) to the webhook URL without any wrapping. Used by callers that need
+     * richer formatting than the simple {@code {"text": "..."}} envelope produced by {@link
+     * #post(String, String)}.
+     */
+    public PostResult postPayload(String fullJsonPayload) {
+        if (!enabled()) {
+            log.info("(Slack disabled — printing locally) {}", fullJsonPayload);
+            return new PostResult(true, 0, "stub");
+        }
+        return sendJson(fullJsonPayload);
+    }
+
+    private PostResult sendJson(String payload) {
         HttpRequest req =
                 HttpRequest.newBuilder()
                         .uri(URI.create(webhookUrl))
